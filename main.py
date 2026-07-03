@@ -8,16 +8,17 @@ main.py — тестовое задание: веб-инструмент "оди
      "исследователя" и возвращает реакцию модели.
 
 Запуск:
-    export OPENROUTER_API_KEY="sk-or-..."
     uvicorn main:app --reload
+
+API-ключ OpenRouter вводится пользователем прямо на странице, серверу
+самому ключ не нужен.
 """
 
-import os
 import time
 
 import requests
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -43,17 +44,12 @@ SYSTEM_PROMPT = (
     "Отвечай коротко, живым разговорным языком, без лишних вступлений."
 )
 
-# Серверный ключ — необязательный фолбэк (например, для твоих собственных
-# тестов через ask_api_key/run.py). Основной сценарий теперь — ключ приходит
-# от клиента в каждом запросе.
-SERVER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "").strip()
-
 # ════════════════════════════════════════════════════════════════
 # ВЫЗОВ LLM (с ретраями, по аналогии с call_llm из tz-drawing-analyzer)
 # ════════════════════════════════════════════════════════════════
 
-def call_llm(user_answer: str, api_key: str | None = None, _retry: int = 0) -> str:
-    key = (api_key or "").strip() or SERVER_API_KEY
+def call_llm(user_answer: str, api_key: str, _retry: int = 0) -> str:
+    key = (api_key or "").strip()
     if not key:
         raise HTTPException(
             status_code=400,
@@ -119,7 +115,6 @@ app = FastAPI(title="Interview Bot")
 
 @app.exception_handler(Exception)
 async def catch_all(request, exc):
-    from fastapi.responses import JSONResponse
     return JSONResponse(status_code=500, content={"detail": f"Внутренняя ошибка: {exc}"})
 
 
