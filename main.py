@@ -64,7 +64,7 @@ def call_llm(user_answer: str, api_key: str | None = None, _retry: int = 0) -> s
         "Authorization": f"Bearer {key}",
         "Content-Type": "application/json",
         "HTTP-Referer": OPENROUTER_REFERER,
-        "X-Title": "Interview Bot — Test Task",
+        "X-Title": "Interview Bot",
     }
     payload = {
         "model": MODEL,
@@ -79,12 +79,34 @@ def call_llm(user_answer: str, api_key: str | None = None, _retry: int = 0) -> s
     try:
         resp = requests.post(OPENROUTER_URL, headers=headers, json=payload, timeout=60)
         resp.raise_for_status()
-        return resp.json()["choices"][0]["message"]["content"].strip()
-    except (requests.exceptions.RequestException, KeyError, IndexError) as e:
+        data = resp.json()
+    except requests.exceptions.RequestException as e:
         if _retry < 2:
             time.sleep(1.5 * (_retry + 1))
             return call_llm(user_answer, api_key, _retry + 1)
-        raise HTTPException(status_code=502, detail=f"LLM недоступна: {e}") from e
+        # Пытаемся вытащить тело ответа от OpenRouter — там обычно есть причина
+        body = ""
+        if getattr(e, "response", None) is not None:
+            body = e.response.text[:300]
+        raise HTTPException(
+            status_code=502,
+            detail=f"OpenRouter недоступен: {e}. {body}".strip(),
+        ) from e
+    except ValueError as e:
+        # resp.json() не смог распарсить ответ (не-JSON тело)
+        raise HTTPException(
+            status_code=502,
+            detail=f"OpenRouter вернул нечитаемый ответ: {e}",
+        ) from e
+
+    try:
+        return data["choices"][0]["message"]["content"].strip()
+    except (KeyError, IndexError, TypeError) as e:
+        # Модель отклонила запрос или вернула ошибку в теле 200-ответа
+        raise HTTPException(
+            status_code=502,
+            detail=f"Неожиданный формат ответа от OpenRouter: {data}",
+        ) from e
 
 
 # ════════════════════════════════════════════════════════════════
@@ -92,6 +114,12 @@ def call_llm(user_answer: str, api_key: str | None = None, _retry: int = 0) -> s
 # ════════════════════════════════════════════════════════════════
 
 app = FastAPI(title="Interview Bot")
+
+
+@app.exception_handler(Exception)
+async def catch_all(request, exc):
+    from fastapi.responses import JSONResponse
+    return JSONResponse(status_code=500, content={"detail": f"Внутренняя ошибка: {exc}"})
 
 
 class AnswerIn(BaseModel):

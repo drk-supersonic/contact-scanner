@@ -50,7 +50,7 @@
     color: var(--muted);
     margin-bottom: 6px;
   }
-  input[type="password"] {
+  input[type="text"]#apiKey {
     width: 100%;
     background: #0f1115;
     border: 1px solid var(--border);
@@ -61,7 +61,7 @@
     font-family: inherit;
     outline: none;
   }
-  input[type="password"]:focus { border-color: var(--accent); }
+  input[type="text"]#apiKey:focus { border-color: var(--accent); }
   .hint {
     font-size: 12px;
     color: var(--muted);
@@ -126,11 +126,11 @@
     <h1>Короткое интервью</h1>
 
     <label class="label" for="apiKey">OpenRouter API Key</label>
-    <input type="password" id="apiKey" placeholder="sk-or-v1-..." autocomplete="off">
+    <input type="text" id="apiKey" placeholder="sk-or-v1-..." autocomplete="off" spellcheck="false">
     <div class="hint">
       Ключ нужен для вызова модели. Получить бесплатно на
       <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">openrouter.ai/keys</a>.
-      Хранится только в этом браузере, никуда кроме OpenRouter не отправляется.
+      Отправляется только в момент запроса, нигде не сохраняется.
     </div>
 
     <div class="question" id="question">Загружаю вопрос...</div>
@@ -147,14 +147,6 @@
   const submitEl = document.getElementById("submit");
   const replyEl = document.getElementById("reply");
   const errorEl = document.getElementById("error");
-
-  // Ключ хранится только локально в браузере пользователя, на сервер
-  // сохраняется исключительно как часть запроса к /api/respond (для вызова OpenRouter)
-  const savedKey = localStorage.getItem("openrouter_api_key");
-  if (savedKey) apiKeyEl.value = savedKey;
-  apiKeyEl.addEventListener("input", () => {
-    localStorage.setItem("openrouter_api_key", apiKeyEl.value.trim());
-  });
 
   async function loadQuestion() {
     try {
@@ -194,8 +186,14 @@
       });
 
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || "Ошибка сервера");
+        let detail = `HTTP ${res.status}`;
+        try {
+          const err = await res.json();
+          if (err.detail) detail = err.detail;
+        } catch {
+          // ответ не в формате JSON — оставляем detail как есть
+        }
+        throw new Error(detail);
       }
 
       const data = await res.json();
