@@ -68,8 +68,9 @@ def call_llm(user_answer: str, api_key: str | None = None, _retry: int = 0) -> s
     }
     payload = {
         "model": MODEL,
-        "max_tokens": 300,
+        "max_tokens": 600,
         "temperature": 0.4,
+        "reasoning_effort": "minimal",
         "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_answer},
