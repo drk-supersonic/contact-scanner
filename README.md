@@ -1,0 +1,113 @@
+# Interview Bot
+
+Тестовое задание: страница с одним вопросом, ответ пользователя уходит в LLM,
+которая либо задаёт один уточняющий вопрос, либо благодарит и завершает диалог.
+
+## Стек
+
+- Бэкенд: FastAPI (Python)
+- Фронт: один HTML-файл с JS (без фреймворков)
+- LLM: OpenRouter, модель `google/gemini-2.5-flash`
+
+## Установка
+
+Python 3.9+
+
+```bash
+pip install -r requirements.txt
+```
+
+## Настройка
+
+Нужен ключ OpenRouter (openrouter.ai, регистрация бесплатная, оплата по факту использования).
+
+```bash
+export OPENROUTER_API_KEY="sk-or-..."
+```
+
+Или скопировать `.env.example` в `.env` и подставить туда ключ (если используете python-dotenv,
+либо просто экспортировать переменную вручную перед запуском).
+
+## Запуск
+
+```bash
+uvicorn main:app --reload
+```
+
+Открыть в браузере: http://127.0.0.1:8000
+
+## Структура
+
+```
+interview-bot/
+├── main.py            # FastAPI: /api/question, /api/respond, раздача фронта
+├── static/
+│   └── index.html      # форма ввода ответа + вывод реакции модели
+├── requirements.txt
+└── .env.example
+```
+
+## Как это работает
+
+1. Фронт при загрузке запрашивает `/api/question` и показывает вопрос.
+2. Пользователь пишет ответ и жмёт «Отправить».
+3. Фронт шлёт `POST /api/respond` с телом `{"answer": "..."}`.
+4. Бэкенд отправляет ответ в LLM с системным промптом «исследователя»
+   (см. `SYSTEM_PROMPT` в `main.py`) и возвращает `{"reply": "..."}`.
+5. Реакция модели выводится на странице.
+
+При сетевой ошибке к OpenRouter — до 2 повторных попыток с задержкой.
+
+## Деплой на Render (бесплатно, без Docker)
+
+1. Залить проект в GitHub (см. раздел "Git" ниже).
+2. На dashboard.render.com: **New +** → **Web Service**.
+3. Подключить репозиторий `interview-bot`.
+4. Настройки (если Render не подхватит `render.yaml` автоматически):
+   - Environment: `Python 3`
+   - Build Command: `pip install -r requirements.txt`
+   - Start Command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
+5. В разделе **Environment** добавить переменную `OPENROUTER_API_KEY` со своим ключом.
+6. Create Web Service → Render соберёт и задеплоит, выдаст адрес вида
+   `https://interview-bot-xxxx.onrender.com`.
+
+Файл `render.yaml` в корне проекта уже описывает эту конфигурацию — если Render
+предложит "использовать Blueprint", можно просто подтвердить, шаги 4 пройдут сами.
+
+Важно: бесплатный тариф "засыпает" без трафика. Открой ссылку за минуту до
+записи демо-видео, чтобы сервис успел проснуться.
+
+## Git: как залить проект и обновлять его
+
+Первая заливка (если папка ещё не git-репозиторий):
+
+```bash
+cd ~/Desktop/interview-bot
+git init
+git add .
+git commit -m "initial commit"
+git branch -M main
+git remote add origin https://github.com/drk-supersonic/interview-bot
+git push -u origin main
+```
+
+Дальнейшие обновления (после правок в коде):
+
+```bash
+git add .
+git commit -m "апдейт"
+git push
+```
+
+Можно одной строкой:
+
+```bash
+git add . && git commit -m "апдейт" && git push
+```
+
+**Про `git push -f`**: это принудительный push, он ЗАТИРАЕТ историю на GitHub
+версией с твоего компьютера. Нужен только если ты сознательно переписал историю
+локально (например, `git commit --amend`) и знаешь, что удалённые коммиты можно
+потерять. Для обычных обновлений он не нужен — обычный `git push` сделает то же
+самое, но безопасно (не даст затереть чужие изменения, если они появятся).
+Использовать `-f` "по умолчанию" не стоит.
