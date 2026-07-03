@@ -43,21 +43,25 @@ SYSTEM_PROMPT = (
     "Отвечай коротко, живым разговорным языком, без лишних вступлений."
 )
 
-API_KEY = os.environ.get("OPENROUTER_API_KEY", "").strip()
+# Серверный ключ — необязательный фолбэк (например, для твоих собственных
+# тестов через ask_api_key/run.py). Основной сценарий теперь — ключ приходит
+# от клиента в каждом запросе.
+SERVER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "").strip()
 
 # ════════════════════════════════════════════════════════════════
 # ВЫЗОВ LLM (с ретраями, по аналогии с call_llm из tz-drawing-analyzer)
 # ════════════════════════════════════════════════════════════════
 
-def call_llm(user_answer: str, _retry: int = 0) -> str:
-    if not API_KEY:
+def call_llm(user_answer: str, api_key: str | None = None, _retry: int = 0) -> str:
+    key = (api_key or "").strip() or SERVER_API_KEY
+    if not key:
         raise HTTPException(
-            status_code=500,
-            detail="Не задан OPENROUTER_API_KEY. Смотри README для настройки.",
+            status_code=400,
+            detail="Не передан API ключ. Введите его в поле на странице.",
         )
 
     headers = {
-        "Authorization": f"Bearer {API_KEY}",
+        "Authorization": f"Bearer {key}",
         "Content-Type": "application/json",
         "HTTP-Referer": OPENROUTER_REFERER,
         "X-Title": "Interview Bot — Test Task",
@@ -79,7 +83,7 @@ def call_llm(user_answer: str, _retry: int = 0) -> str:
     except (requests.exceptions.RequestException, KeyError, IndexError) as e:
         if _retry < 2:
             time.sleep(1.5 * (_retry + 1))
-            return call_llm(user_answer, _retry + 1)
+            return call_llm(user_answer, api_key, _retry + 1)
         raise HTTPException(status_code=502, detail=f"LLM недоступна: {e}") from e
 
 
@@ -92,6 +96,7 @@ app = FastAPI(title="Interview Bot")
 
 class AnswerIn(BaseModel):
     answer: str
+    api_key: str | None = None
 
 
 class ReplyOut(BaseModel):
@@ -108,7 +113,7 @@ def respond(payload: AnswerIn):
     answer = payload.answer.strip()
     if not answer:
         raise HTTPException(status_code=400, detail="Пустой ответ")
-    reply = call_llm(answer)
+    reply = call_llm(answer, payload.api_key)
     return {"reply": reply}
 
 

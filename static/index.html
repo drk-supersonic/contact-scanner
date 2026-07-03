@@ -44,6 +44,32 @@
     margin-bottom: 18px;
     line-height: 1.5;
   }
+  .label {
+    display: block;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  input[type="password"] {
+    width: 100%;
+    background: #0f1115;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    padding: 10px 14px;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+  }
+  input[type="password"]:focus { border-color: var(--accent); }
+  .hint {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 6px;
+    margin-bottom: 18px;
+    line-height: 1.4;
+  }
+  .hint a { color: var(--accent); }
   textarea {
     width: 100%;
     min-height: 120px;
@@ -98,6 +124,15 @@
 <body>
   <div class="card">
     <h1>Короткое интервью</h1>
+
+    <label class="label" for="apiKey">OpenRouter API Key</label>
+    <input type="password" id="apiKey" placeholder="sk-or-v1-..." autocomplete="off">
+    <div class="hint">
+      Ключ нужен для вызова модели. Получить бесплатно на
+      <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">openrouter.ai/keys</a>.
+      Хранится только в этом браузере, никуда кроме OpenRouter не отправляется.
+    </div>
+
     <div class="question" id="question">Загружаю вопрос...</div>
     <textarea id="answer" placeholder="Ваш ответ..."></textarea>
     <button id="submit">Отправить</button>
@@ -108,9 +143,18 @@
 <script>
   const questionEl = document.getElementById("question");
   const answerEl = document.getElementById("answer");
+  const apiKeyEl = document.getElementById("apiKey");
   const submitEl = document.getElementById("submit");
   const replyEl = document.getElementById("reply");
   const errorEl = document.getElementById("error");
+
+  // Ключ хранится только локально в браузере пользователя, на сервер
+  // сохраняется исключительно как часть запроса к /api/respond (для вызова OpenRouter)
+  const savedKey = localStorage.getItem("openrouter_api_key");
+  if (savedKey) apiKeyEl.value = savedKey;
+  apiKeyEl.addEventListener("input", () => {
+    localStorage.setItem("openrouter_api_key", apiKeyEl.value.trim());
+  });
 
   async function loadQuestion() {
     try {
@@ -124,9 +168,15 @@
 
   async function submitAnswer() {
     const answer = answerEl.value.trim();
+    const apiKey = apiKeyEl.value.trim();
     errorEl.classList.remove("visible");
     replyEl.classList.remove("visible");
 
+    if (!apiKey) {
+      errorEl.textContent = "Введите OpenRouter API Key";
+      errorEl.classList.add("visible");
+      return;
+    }
     if (!answer) {
       errorEl.textContent = "Введите ответ перед отправкой";
       errorEl.classList.add("visible");
@@ -140,7 +190,7 @@
       const res = await fetch("/api/respond", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ answer }),
+        body: JSON.stringify({ answer, api_key: apiKey }),
       });
 
       if (!res.ok) {
