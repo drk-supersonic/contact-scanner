@@ -32,7 +32,7 @@ MODEL = "openai/gpt-5-mini"
 
 QUESTION = "Расскажите, как вы выбирали последний онлайн-курс?"
 
-SYSTEM_PROMPT = (
+SYSTEM_PROMPT_FIRST = (
     "Ты — исследователь, проводящий короткое интервью. "
     "Респонденту задан вопрос: «Расскажите, как вы выбирали последний онлайн-курс?». "
     "Оцени его ответ.\n\n"
@@ -47,17 +47,37 @@ SYSTEM_PROMPT = (
     "парантетических вставок через тире."
 )
 
+# Промпт для второго (финального) ответа. Лимит на уточняющий вопрос уже
+# исчерпан, поэтому модели запрещено задавать ещё один вопрос — независимо
+# от того, насколько подробным получился ответ. Это закрывает лазейку:
+# без этого модель могла бы решить, что второй ответ всё ещё "поверхностный",
+# и снова сформулировать реплику как вопрос.
+SYSTEM_PROMPT_FINAL = (
+    "Ты — исследователь, проводящий короткое интервью. Респонденту был задан "
+    "основной вопрос про выбор последнего онлайн-курса, затем — ОДИН уточняющий "
+    "вопрос, на который он только что ответил.\n\n"
+    "Лимит уточняющих вопросов исчерпан. Ты ОБЯЗАН завершить разговор: "
+    "поблагодари респондента за ответ. Ни при каких обстоятельствах не задавай "
+    "больше никаких вопросов, даже если ответ снова кажется неполным.\n\n"
+    "Отвечай коротко, живым разговорным языком, без лишних вступлений. "
+    "Не используй тире (—, -) для соединения частей предложения. "
+    "Пиши простыми короткими фразами через точку или запятую, без "
+    "парантетических вставок через тире."
+)
+
 # ════════════════════════════════════════════════════════════════
 # ВЫЗОВ LLM (с ретраями, по аналогии с call_llm из tz-drawing-analyzer)
 # ════════════════════════════════════════════════════════════════
 
-def call_llm(user_answer: str, api_key: str, _retry: int = 0) -> str:
+def call_llm(user_answer: str, api_key: str, is_final: bool, _retry: int = 0) -> str:
     key = (api_key or "").strip()
     if not key:
         raise HTTPException(
             status_code=400,
             detail="Не передан API ключ. Введите его в поле на странице.",
         )
+
+    system_prompt = SYSTEM_PROMPT_FINAL if is_final else SYSTEM_PROMPT_FIRST
 
     headers = {
         "Authorization": f"Bearer {key}",
@@ -71,7 +91,7 @@ def call_llm(user_answer: str, api_key: str, _retry: int = 0) -> str:
         "temperature": 0.4,
         "reasoning_effort": "minimal",
         "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_answer},
         ],
     }
@@ -83,7 +103,7 @@ def call_llm(user_answer: str, api_key: str, _retry: int = 0) -> str:
     except requests.exceptions.RequestException as e:
         if _retry < 2:
             time.sleep(1.5 * (_retry + 1))
-            return call_llm(user_answer, api_key, _retry + 1)
+            return call_llm(user_answer, api_key, is_final, _retry + 1)
         # Пытаемся вытащить тело ответа от OpenRouter — там обычно есть причина
         body = ""
         if getattr(e, "response", None) is not None:
@@ -124,6 +144,7 @@ async def catch_all(request, exc):
 class AnswerIn(BaseModel):
     answer: str
     api_key: str | None = None
+    round: int = 0  # 0 — первый ответ на основной вопрос, 1+ — ответ на уточнение
 
 
 class ReplyOut(BaseModel):
@@ -140,7 +161,10 @@ def respond(payload: AnswerIn):
     answer = payload.answer.strip()
     if not answer:
         raise HTTPException(status_code=400, detail="Пустой ответ")
-    reply = call_llm(answer, payload.api_key)
+    # Уточняющий вопрос допустим только один раз: если это уже ответ на
+    # уточнение (round >= 1), лимит исчерпан и разговор обязан завершиться.
+    is_final = payload.round >= 1
+    reply = call_llm(answer, payload.api_key, is_final)
     return {"reply": reply}
 
 

@@ -313,7 +313,7 @@
       const res = await fetch("/api/respond", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ answer, api_key: apiKey }),
+        body: JSON.stringify({ answer, api_key: apiKey, round }),
       });
 
       if (!res.ok) {
@@ -328,13 +328,14 @@
       }
 
       const data = await res.json();
-      round += 1;
 
-      // По заданию допустим ровно ОДИН уточняющий вопрос. Если это уже
-      // второй раунд (был один уточняющий вопрос и ответ на него), интервью
-      // обязано завершиться — даже если модель по какой-то причине снова
-      // сформулировала фразу как вопрос.
-      const isFollowUp = round < 2 && data.reply.includes("?");
+      // Уточняющий вопрос допустим только один раз: если это уже был
+      // ответ на уточнение (round >= 1 на момент отправки), разговор
+      // обязан завершиться — независимо от текста, который вернула модель.
+      // Бэкенд, в свою очередь, для этого раунда использует промпт,
+      // гарантирующий закрывающую (не вопросительную) реплику.
+      const isFollowUp = round === 0 && data.reply.includes("?");
+      round += 1;
 
       questionEl.textContent = data.reply;
       answerEl.value = "";
