@@ -6,19 +6,15 @@
 <title>INTERVIEW-BOT</title>
 <style>
   :root {
-    --bg: #0e0e10;
-    --panel: #18181b;
-    --panel-2: #101012;
-    --stripe-dark: #0a0a0c;
-    --question-bg: #1f1f24;
-    --question-border: #3a3a42;
-    --line: #303034;
-    --text: #f5f5f2;
-    --subtitle: #b3b3b8;
-    --dim: #8b8b90;
-    --yellow: #f6c744;
-    --green: #6fe089;
-    --green-strong: #349e63;
+    --bg: #0f1113;
+    --panel: #1c1f22;
+    --panel-2: #121416;
+    --line: #34383b;
+    --text: #f1f3f3;
+    --subtitle: #a9afb2;
+    --dim: #83898c;
+    --teal: #3ddbc0;
+    --teal-strong: #24b89f;
     --red: #ff6b5c;
   }
   * { box-sizing: border-box; }
@@ -72,7 +68,7 @@
     margin: 0 0 20px;
     background: repeating-linear-gradient(
       45deg,
-      var(--green), var(--green) 4px,
+      var(--teal), var(--teal) 4px,
       var(--panel) 4px, var(--panel) 9px
     );
   }
@@ -125,16 +121,16 @@
     outline: none;
   }
   input[type="text"]#apiKey:focus,
-  textarea:focus { border-color: var(--green); }
+  textarea:focus { border-color: var(--teal); }
   input[type="text"]#apiKey::placeholder,
-  textarea::placeholder { color: #55554f; }
+  textarea::placeholder { color: #55595c; }
 
   #apiKey { margin-bottom: 24px; }
 
   .question-block {
     width: 100%;
     background: var(--panel);
-    border: 1px solid var(--green);
+    border: 1px solid var(--teal);
     border-radius: 5px;
     padding: 14px 16px;
     margin-bottom: 16px;
@@ -148,7 +144,7 @@
     font-size: 10px;
     letter-spacing: 1.5px;
     text-transform: uppercase;
-    color: var(--green);
+    color: var(--teal);
     margin-bottom: 8px;
     font-weight: 700;
   }
@@ -164,7 +160,7 @@
   textarea::-webkit-scrollbar { width: 5px; }
   textarea::-webkit-scrollbar-track { background: transparent; }
   textarea::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
-  textarea::-webkit-scrollbar-thumb:hover { background: #46464c; }
+  textarea::-webkit-scrollbar-thumb:hover { background: #46494c; }
 
   button#submit {
     margin-top: 16px;
@@ -172,8 +168,8 @@
     padding: 13px;
     border: none;
     border-radius: 5px;
-    background: var(--yellow);
-    color: #16161a;
+    background: var(--teal);
+    color: #0f1113;
     font-size: 13px;
     font-weight: 800;
     letter-spacing: 2px;
@@ -185,14 +181,14 @@
     justify-content: center;
     gap: 8px;
   }
-  button#submit:hover:not(:disabled) { background: #ffd35c; }
+  button#submit:hover:not(:disabled) { background: var(--teal-strong); }
   button#submit:disabled { opacity: 0.55; cursor: default; }
 
   .sync-spinner {
     width: 13px;
     height: 13px;
-    border: 2px solid rgba(22, 22, 26, 0.3);
-    border-top-color: #16161a;
+    border: 2px solid rgba(15, 17, 19, 0.3);
+    border-top-color: #0f1113;
     border-radius: 50%;
     display: inline-block;
     animation: spin 0.7s linear infinite;
@@ -204,7 +200,7 @@
   .reply-box {
     margin-top: 18px;
     background: var(--panel);
-    border: 1px solid var(--green);
+    border: 1px solid var(--teal);
     border-radius: 5px;
     padding: 14px 16px;
     font-size: 15px;
@@ -219,10 +215,9 @@
     font-size: 10px;
     letter-spacing: 1.5px;
     text-transform: uppercase;
-    color: var(--green);
+    color: var(--teal);
     margin-bottom: 8px;
     font-weight: 700;
-    
   }
 
   .error {
