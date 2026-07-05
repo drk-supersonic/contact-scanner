@@ -133,18 +133,13 @@
     padding: 14px 16px;
     margin-bottom: 16px;
     font-size: 15px;
-    font-weight: 500;
-    line-height: 1.4;
+    font-weight: 400;
+    line-height: 1.5;
     color: var(--text);
   }
   .question-block .tag {
-    display: block;
-    font-size: 10px;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
     color: var(--lime);
-    margin-bottom: 8px;
-    font-weight: 700;
+    font-weight: 400;
   }
 
   textarea {
@@ -159,6 +154,11 @@
   textarea::-webkit-scrollbar-track { background: transparent; }
   textarea::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
   textarea::-webkit-scrollbar-thumb:hover { background: #46494c; }
+
+  textarea:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
 
   button#submit {
     margin-top: 16px;
@@ -193,29 +193,6 @@
   }
   @keyframes spin {
     to { transform: rotate(360deg); }
-  }
-
-  .reply-box {
-    margin-top: 18px;
-    background: var(--panel);
-    border: 1px solid var(--lime);
-    border-radius: 5px;
-    padding: 14px 16px;
-    font-size: 15px;
-    font-weight: 500;
-    line-height: 1.4;
-    display: none;
-    white-space: pre-wrap;
-  }
-  .reply-box.visible { display: block; }
-  .reply-box .tag {
-    display: block;
-    font-size: 10px;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    color: var(--lime);
-    margin-bottom: 8px;
-    font-weight: 700;
   }
 
   .error {
@@ -260,7 +237,7 @@
       <input type="text" id="apiKey" placeholder="sk-or-v1-..." autocomplete="off" spellcheck="false">
 
       <div class="question-block">
-        <span class="tag">Вопрос</span>
+        <span class="tag" id="questionTag">Вопрос:</span>
         <span id="question">загрузка...</span>
       </div>
 
@@ -269,7 +246,6 @@
 
       <button id="submit">Отправить</button>
       <div class="error" id="error"></div>
-      <div class="reply-box" id="reply"></div>
 
       <div class="barcode">
         <span class="tstripe short"></span>
@@ -281,11 +257,13 @@
 
 <script>
   const questionEl = document.getElementById("question");
+  const questionTagEl = document.getElementById("questionTag");
   const answerEl = document.getElementById("answer");
   const apiKeyEl = document.getElementById("apiKey");
   const submitEl = document.getElementById("submit");
-  const replyEl = document.getElementById("reply");
   const errorEl = document.getElementById("error");
+
+  let finished = false;
 
   async function loadQuestion() {
     try {
@@ -302,15 +280,16 @@
     if (isLoading) {
       submitEl.innerHTML = 'Синхронизация <span class="sync-spinner"></span>';
     } else {
-      submitEl.textContent = "Отправить";
+      submitEl.textContent = finished ? "Интервью завершено" : "Отправить";
     }
   }
 
   async function submitAnswer() {
+    if (finished) return;
+
     const answer = answerEl.value.trim();
     const apiKey = apiKeyEl.value.trim();
     errorEl.classList.remove("visible");
-    replyEl.classList.remove("visible");
 
     if (!apiKey) {
       errorEl.textContent = "Нужен OpenRouter API Key";
@@ -344,10 +323,21 @@
       }
 
       const data = await res.json();
-      replyEl.innerHTML = '<span class="tag">Ответ модели</span>';
-      const textNode = document.createTextNode(data.reply);
-      replyEl.appendChild(textNode);
-      replyEl.classList.add("visible");
+      const isFollowUp = data.reply.includes("?");
+
+      questionEl.textContent = data.reply;
+      answerEl.value = "";
+
+      if (isFollowUp) {
+        questionTagEl.textContent = "Уточнение:";
+        answerEl.placeholder = "Введите ответ...";
+        answerEl.focus();
+      } else {
+        finished = true;
+        questionTagEl.textContent = "Итог:";
+        answerEl.disabled = true;
+        answerEl.placeholder = "";
+      }
     } catch (e) {
       errorEl.textContent = e.message || "Что-то пошло не так";
       errorEl.classList.add("visible");
