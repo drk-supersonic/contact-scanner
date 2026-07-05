@@ -22,6 +22,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+
 # ════════════════════════════════════════════════════════════════
 # КОНСТАНТЫ
 # ════════════════════════════════════════════════════════════════
