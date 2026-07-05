@@ -6,16 +6,18 @@
 <title>INTERVIEW-BOT</title>
 <style>
   :root {
-    --bg: #0f1113;
-    --panel: #1c1f22;
-    --panel-2: #121416;
-    --line: #34383b;
-    --text: #f1f3f3;
-    --subtitle: #a9afb2;
-    --dim: #83898c;
-    --lime: #d7f900;
-    --lime-strong: #c2e100;
-    --red: #ff6b5c;
+    --bg: #0e0f10;
+    --panel: #1c1e20;
+    --panel-2: #131415;
+    --line: #34373a;
+    --text: #f2f3f0;
+    --subtitle: #a7aaa5;
+    --dim: #888b87;
+    --screen-text: #f2f3f0;
+    --screen-dim: #6a6d69;
+    --orange: #cbe000;
+    --orange-strong: #b5c700;
+    --red: #d1382e;
   }
   * { box-sizing: border-box; }
   body {
@@ -36,6 +38,7 @@
     border: 1px solid var(--line);
     border-radius: 14px;
     position: relative;
+    box-shadow: 0 20px 45px -20px rgba(0, 0, 0, 0.25);
   }
 
   .topstrip {
@@ -45,12 +48,12 @@
     border-bottom: 1px solid var(--line);
     font-size: 11px;
     letter-spacing: 2px;
-    color: var(--dim);
+    color: #50534f;
     text-transform: uppercase;
   }
   .tstripe {
     height: 8px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Crect x='0' y='4' width='4' height='4' rx='1.2' fill='%2334383b'/%3E%3Crect x='4' y='0' width='4' height='4' rx='1.2' fill='%2334383b'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Crect x='0' y='4' width='4' height='4' rx='0' fill='%2350534f'/%3E%3Crect x='4' y='0' width='4' height='4' rx='0' fill='%2350534f'/%3E%3C/svg%3E");
     background-repeat: repeat-x;
     background-position: left center;
     background-size: 8px 8px;
@@ -64,10 +67,10 @@
     height: 8px;
     border-radius: 2px;
     margin: 0 0 20px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='8' viewBox='0 0 10 8'%3E%3Crect x='-3' y='2' width='16' height='4' rx='2' fill='%23d7f900' transform='rotate(-45 5 4)'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='8' viewBox='0 0 20 8'%3E%3Crect x='-3' y='2' width='16' height='4' rx='0' fill='%23cbe000' transform='rotate(-45 5 4)'/%3E%3Crect x='7' y='2' width='16' height='4' rx='0' fill='%23cbe000' transform='rotate(-45 15 4)'/%3E%3C/svg%3E");
     background-repeat: repeat-x;
     background-position: left center;
-    background-size: 10px 8px;
+    background-size: 20px 8px;
   }
 
   .content { padding: 26px 26px 28px; }
@@ -92,12 +95,12 @@
 
   .label {
     display: block;
-    font-size: 12px;
-    letter-spacing: 1px;
+    font-size: 11px;
+    letter-spacing: 2px;
     text-transform: uppercase;
-    color: var(--dim);
+    color: var(--subtitle);
     margin-bottom: 8px;
-    font-weight: 500;
+    font-weight: 400;
     font-family: "Helvetica Neue", Arial, sans-serif;
   }
   .tag {
@@ -110,34 +113,35 @@
     background: var(--panel-2);
     border: 1px solid var(--line);
     border-radius: 5px;
-    color: var(--text);
+    color: var(--screen-text);
     padding: 12px 14px;
     font-size: 15px;
-    font-weight: 500;
+    font-weight: 400;
+    line-height: 1.5;
     font-family: "Helvetica Neue", Arial, sans-serif;
     outline: none;
   }
   input[type="text"]#apiKey:focus,
-  textarea:focus { border-color: var(--lime); }
+  textarea:focus { border-color: var(--orange); }
   input[type="text"]#apiKey::placeholder,
-  textarea::placeholder { color: #55595c; }
+  textarea::placeholder { color: var(--subtitle); }
 
   #apiKey { margin-bottom: 24px; }
 
   .question-block {
     width: 100%;
-    background: var(--panel);
-    border: 1px solid var(--lime);
+    background: var(--panel-2);
+    border: 1px solid var(--orange);
     border-radius: 5px;
     padding: 14px 16px;
     margin-bottom: 16px;
     font-size: 15px;
     font-weight: 400;
     line-height: 1.5;
-    color: var(--text);
+    color: var(--screen-text);
   }
   .question-block .tag {
-    color: var(--lime);
+    color: var(--orange);
     font-weight: 400;
   }
 
@@ -165,8 +169,8 @@
     padding: 13px;
     border: none;
     border-radius: 5px;
-    background: var(--lime);
-    color: #0f1113;
+    background: var(--orange);
+    color: #0e0f10;
     font-size: 13px;
     font-weight: 800;
     letter-spacing: 2px;
@@ -178,14 +182,14 @@
     justify-content: center;
     gap: 8px;
   }
-  button#submit:hover:not(:disabled) { background: var(--lime-strong); }
+  button#submit:hover:not(:disabled) { background: var(--orange-strong); }
   button#submit:disabled { opacity: 0.55; cursor: default; }
 
   .sync-spinner {
     width: 13px;
     height: 13px;
-    border: 2px solid rgba(15, 17, 19, 0.3);
-    border-top-color: #0f1113;
+    border: 2px solid rgba(14, 15, 16, 0.3);
+    border-top-color: #0e0f10;
     border-radius: 50%;
     display: inline-block;
     animation: spin 0.7s linear infinite;
@@ -212,7 +216,7 @@
     padding: 10px 26px;
     border-top: 1px solid var(--line);
     border-radius: 0 0 13px 13px;
-    color: var(--dim);
+    color: #50534f;
     font-size: 11px;
     letter-spacing: 2px;
     text-transform: uppercase;
