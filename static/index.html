@@ -50,12 +50,10 @@
   }
   .tstripe {
     height: 8px;
-    border-radius: 2px;
-    background: repeating-linear-gradient(
-      45deg,
-      var(--line), var(--line) 4px,
-      var(--panel) 4px, var(--panel) 9px
-    );
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Crect x='0' y='4' width='4' height='4' rx='1.2' fill='%2334383b'/%3E%3Crect x='4' y='0' width='4' height='4' rx='1.2' fill='%2334383b'/%3E%3C/svg%3E");
+    background-repeat: repeat-x;
+    background-position: left center;
+    background-size: 8px 8px;
     display: block;
   }
   .tstripe.short { width: 20px; flex: none; margin-right: 10px; }
@@ -66,11 +64,10 @@
     height: 8px;
     border-radius: 2px;
     margin: 0 0 20px;
-    background: repeating-linear-gradient(
-      45deg,
-      var(--lime), var(--lime) 4px,
-      var(--panel) 4px, var(--panel) 9px
-    );
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='8' viewBox='0 0 10 8'%3E%3Crect x='-3' y='2' width='16' height='4' rx='2' fill='%23d7f900' transform='rotate(-45 5 4)'/%3E%3C/svg%3E");
+    background-repeat: repeat-x;
+    background-position: left center;
+    background-size: 10px 8px;
   }
 
   .content { padding: 26px 26px 28px; }
