@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CONTACT-SCANNER</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --bg: #0e0f10;
+    --panel: #1c1e20;
+    --panel-2: #131415;
+    --line: #34373a;
+    --text: #f2f3f0;
+    --subtitle: #a7aaa5;
+    --dim: #888b87;
+    --screen-text: #f2f3f0;
+    --orange: #cbe000;
+    --orange-strong: #b5c700;
+    --red: #d1382e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    padding: 24px;
+    display: flex;
+    justify-content: center;
+  }
+  .panel {
+    width: 100%;
+    max-width: 980px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: 0 20px 45px -20px rgba(0, 0, 0, 0.25);
+  }
+  .topstrip {
+    display: flex;
+    align-items: center;
+    padding: 10px 26px;
+    border-bottom: 1px solid var(--line);
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: #50534f;
+    text-transform: uppercase;
+  }
+  .tstripe {
+    height: 8px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Crect x='0' y='4' width='4' height='4' rx='0' fill='%2350534f'/%3E%3Crect x='4' y='0' width='4' height='4' rx='0' fill='%2350534f'/%3E%3C/svg%3E");
+    background-repeat: repeat-x;
+    background-position: left center;
+    background-size: 8px 8px;
+    display: block;
+  }
+  .tstripe.short { width: 20px; flex: none; margin-right: 10px; }
+  .tstripe.long { flex: 1; margin-left: 10px; }
+  .header-rule {
+    border: none;
+    height: 8px;
+    border-radius: 4px;
+    margin: 0 0 20px;
+    background: repeating-linear-gradient(-45deg, var(--orange), var(--orange) 5px, var(--panel) 5px, var(--panel) 10px);
+  }
+  .content { padding: 26px 26px 28px; }
+  h1 {
+    font-size: 23px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin: 0 0 4px;
+    line-height: 1.1;
+  }
+  .subtitle {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--subtitle);
+    margin-bottom: 22px;
+  }
+  .label {
+    display: block;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--subtitle);
+    margin-bottom: 8px;
+  }
+  input[type="text"]#apiKey {
+    width: 100%;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    color: var(--screen-text);
+    padding: 12px 14px;
+    font-size: 15px;
+    font-family: inherit;
+    outline: none;
+    margin-bottom: 24px;
+  }
+  input[type="text"]#apiKey:focus { border-color: var(--orange); }
+  input[type="text"]#apiKey::placeholder { color: var(--subtitle); }
+
+  .dropzone {
+    border: 2px dashed var(--line);
+    border-radius: 8px;
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--subtitle);
+    font-size: 14px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+    margin-bottom: 18px;
+  }
+  .dropzone.dragover {
+    border-color: var(--orange);
+    color: var(--text);
+    background: rgba(203, 224, 0, 0.05);
+  }
+  .dropzone strong { color: var(--orange); }
+  #fileInput { display: none; }
+
+  .filelist-summary {
+    font-size: 13px;
+    color: var(--subtitle);
+    margin-bottom: 14px;
+  }
+  .filelist-summary strong { color: var(--text); }
+
+  button {
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    border-radius: 4px;
+  }
+  button#startBtn {
+    width: 100%;
+    padding: 13px;
+    background: var(--orange);
+    color: #0e0f10;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+  button#startBtn:hover:not(:disabled) { background: var(--orange-strong); }
+  button#startBtn:disabled { opacity: 0.45; cursor: default; }
+
+  .progress-wrap { margin-bottom: 18px; display: none; }
+  .progress-label {
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--subtitle);
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .progress-track {
+    height: 8px;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--orange);
+    transition: width 0.2s;
+  }
+
+  .error {
+    color: var(--red);
+    margin: 4px 0 14px;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    font-weight: 700;
+    display: none;
+  }
+  .error.visible { display: block; }
+
+  .results-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 8px 0 12px;
+    display: none;
+  }
+  .results-count { font-size: 13px; color: var(--subtitle); }
+  .results-count strong { color: var(--text); }
+  .download-buttons { display: flex; gap: 10px; }
+  .download-buttons button {
+    padding: 9px 14px;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .download-buttons button:hover { border-color: var(--orange); color: var(--orange); }
+
+  .table-wrap {
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    overflow-x: auto;
+    display: none;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  th {
+    background: var(--panel-2);
+    color: var(--subtitle);
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-weight: 700;
+    position: sticky;
+    top: 0;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(203, 224, 0, 0.04); }
+  td.empty-cell { color: #4a4d49; }
+  td.error-cell { color: var(--red); font-size: 11px; }
+
+  .pagination {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+  .pagination button {
+    padding: 6px 11px;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--subtitle);
+    font-size: 12px;
+  }
+  .pagination button:hover:not(:disabled) { color: var(--text); border-color: var(--orange); }
+  .pagination button.active { background: var(--orange); color: #0e0f10; border-color: var(--orange); }
+  .pagination button:disabled { opacity: 0.35; cursor: default; }
+
+  .barcode {
+    display: flex;
+    align-items: center;
+    margin: 26px -26px -28px;
+    padding: 10px 26px;
+    border-top: 1px solid var(--line);
+    border-radius: 0 0 13px 13px;
+    color: #50534f;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+  <div class="panel">
+    <div class="topstrip">
+      <span class="tstripe short"></span>
+      <span>CONTACT-SCANNER</span>
+      <span class="tstripe long"></span>
+    </div>
+
+    <div class="content">
+      <h1>Сканер контактов со скриншотов</h1>
+      <div class="subtitle">Имя / организация · телефон · email · адрес</div>
+      <hr class="header-rule">
+
+      <label class="label" for="apiKey">OpenRouter API Key</label>
+      <input type="text" id="apiKey" placeholder="sk-or-v1-..." autocomplete="off" spellcheck="false">
+
+      <div class="dropzone" id="dropzone">
+        Перетащи сюда скриншоты (или папку со скриншотами)<br>
+        <strong>или нажми, чтобы выбрать файлы</strong>
+        <input type="file" id="fileInput" multiple accept="image/*">
+      </div>
+
+      <div class="filelist-summary" id="filelistSummary"></div>
+
+      <button id="startBtn" disabled>Начать сканирование</button>
+
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-label">
+          <span id="progressText">Обработано 0 из 0</span>
+          <span id="progressBatch"></span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      </div>
+
+      <div class="error" id="error"></div>
+
+      <div class="results-header" id="resultsHeader">
+        <div class="results-count" id="resultsCount"></div>
+        <div class="download-buttons">
+          <button id="downloadCsv">Скачать CSV</button>
+          <button id="downloadXlsx">Скачать XLSX</button>
+        </div>
+      </div>
+
+      <div class="table-wrap" id="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Имя / организация</th>
+              <th>Телефон</th>
+              <th>Email</th>
+              <th>Адрес</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+
+      <div class="pagination" id="pagination"></div>
+
+      <div class="barcode">
+        <span class="tstripe short"></span>
+        <span>GEMINI 3.1 FLASH LITE</span>
+        <span class="tstripe long"></span>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const BATCH_SIZE = 100;
+  const PAGE_SIZE = 50;
+  const IMAGE_EXT = /\.(png|jpe?g|webp|gif|bmp)$/i;
+
+  const apiKeyEl = document.getElementById("apiKey");
+  const dropzone = document.getElementById("dropzone");
+  const fileInput = document.getElementById("fileInput");
+  const filelistSummary = document.getElementById("filelistSummary");
+  const startBtn = document.getElementById("startBtn");
+  const progressWrap = document.getElementById("progressWrap");
+  const progressText = document.getElementById("progressText");
+  const progressBatch = document.getElementById("progressBatch");
+  const progressFill = document.getElementById("progressFill");
+  const errorEl = document.getElementById("error");
+  const resultsHeader = document.getElementById("resultsHeader");
+  const resultsCount = document.getElementById("resultsCount");
+  const tableWrap = document.getElementById("tableWrap");
+  const tableBody = document.getElementById("tableBody");
+  const paginationEl = document.getElementById("pagination");
+
+  let collectedFiles = [];
+  let rawResults = [];
+  let dedupedResults = [];
+  let currentPage = 1;
+
+  // ── Сбор файлов (клик или drag&drop, включая папки) ──────────────
+
+  function showError(msg) {
+    errorEl.textContent = msg;
+    errorEl.classList.add("visible");
+  }
+  function clearError() {
+    errorEl.classList.remove("visible");
+  }
+
+  function updateSummary() {
+    if (collectedFiles.length === 0) {
+      filelistSummary.textContent = "";
+      startBtn.disabled = true;
+      return;
+    }
+    const batches = Math.ceil(collectedFiles.length / BATCH_SIZE);
+    filelistSummary.innerHTML = `Выбрано <strong>${collectedFiles.length}</strong> изображений — обработаем ${batches} батч(ей) по ${BATCH_SIZE} максимум.`;
+    startBtn.disabled = false;
+  }
+
+  function addFiles(files) {
+    const imgs = files.filter(f => f.type.startsWith("image/") || IMAGE_EXT.test(f.name));
+    collectedFiles = collectedFiles.concat(imgs);
+    updateSummary();
+  }
+
+  dropzone.addEventListener("click", () => fileInput.click());
+  fileInput.addEventListener("change", () => {
+    addFiles(Array.from(fileInput.files));
+    fileInput.value = "";
+  });
+
+  dropzone.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    dropzone.classList.add("dragover");
+  });
+  dropzone.addEventListener("dragleave", () => dropzone.classList.remove("dragover"));
+
+  function traverseEntry(entry) {
+    return new Promise((resolve) => {
+      if (entry.isFile) {
+        entry.file((file) => resolve([file]), () => resolve([]));
+      } else if (entry.isDirectory) {
+        const reader = entry.createReader();
+        let allEntries = [];
+        const readBatch = () => {
+          reader.readEntries(async (entries) => {
+            if (entries.length === 0) {
+              const nested = await Promise.all(allEntries.map(traverseEntry));
+              resolve(nested.flat());
+            } else {
+              allEntries = allEntries.concat(entries);
+              readBatch();
+            }
+          }, () => resolve([]));
+        };
+        readBatch();
+      } else {
+        resolve([]);
+      }
+    });
+  }
+
+  dropzone.addEventListener("drop", async (e) => {
+    e.preventDefault();
+    dropzone.classList.remove("dragover");
+    const items = e.dataTransfer.items;
+    if (items && items.length && items[0].webkitGetAsEntry) {
+      const entries = Array.from(items).map(it => it.webkitGetAsEntry()).filter(Boolean);
+      const nested = await Promise.all(entries.map(traverseEntry));
+      addFiles(nested.flat());
+    } else {
+      addFiles(Array.from(e.dataTransfer.files));
+    }
+  });
+
+  // ── Нормализация и дедупликация ───────────────────────────────────
+
+  function normalizePhone(raw) {
+    const digits = (raw || "").replace(/\D/g, "");
+    if (!digits) return "";
+    // берём последние 10 цифр — снимает разницу между +7 / 8 / 7 в начале
+    return digits.slice(-10);
+  }
+
+  function splitMulti(value) {
+    return (value || "")
+      .split(/[;,]/)
+      .map(s => s.trim())
+      .filter(Boolean);
+  }
+
+  function dedupe(records) {
+    // Union-Find по ключам (нормализованный телефон / email в нижнем регистре)
+    const parent = {};
+    const find = (x) => {
+      while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; }
+      return x;
+    };
+    const union = (a, b) => {
+      const ra = find(a), rb = find(b);
+      if (ra !== rb) parent[ra] = rb;
+    };
+    const keyToRecordIdx = {};
+
+    records.forEach((rec, idx) => {
+      const keys = [];
+      splitMulti(rec.phone).forEach(p => {
+        const n = normalizePhone(p);
+        if (n.length >= 7) keys.push("p:" + n);
+      });
+      splitMulti(rec.email).forEach(e => {
+        keys.push("e:" + e.toLowerCase());
+      });
+      if (keys.length === 0) {
+        keys.push("solo:" + idx); // нечем сопоставлять — не объединяем ни с кем
+      }
+      keys.forEach(k => {
+        if (!(k in parent)) parent[k] = k;
+      });
+      for (let i = 1; i < keys.length; i++) union(keys[0], keys[i]);
+      keys.forEach(k => {
+        if (!keyToRecordIdx[k]) keyToRecordIdx[k] = [];
+        keyToRecordIdx[k].push(idx);
+      });
+      rec.__keys = keys;
+    });
+
+    const clusters = {};
+    records.forEach((rec, idx) => {
+      const root = find(rec.__keys[0]);
+      if (!clusters[root]) clusters[root] = [];
+      clusters[root].push(idx);
+    });
+
+    const merged = [];
+    Object.values(clusters).forEach(idxs => {
+      const group = idxs.map(i => records[i]);
+      const longest = (field) => group.reduce((best, r) => (r[field] || "").length > (best || "").length ? r[field] : best, "");
+      const mergedMulti = (field, normalizeFn) => {
+        const seen = new Set();
+        const parts = [];
+        group.forEach(r => splitMulti(r[field]).forEach(v => {
+          const n = normalizeFn ? normalizeFn(v) : v.toLowerCase();
+          if (!seen.has(n)) { seen.add(n); parts.push(v); }
+        }));
+        return parts.join("; ");
+      };
+      const errors = group.map(r => r.error).filter(Boolean);
+      merged.push({
+        name: longest("name"),
+        phone: mergedMulti("phone", normalizePhone),
+        email: mergedMulti("email"),
+        address: longest("address"),
+        sources: group.length,
+        error: errors[0] || "",
+      });
+    });
+
+    // строки без имени/телефона/email/адреса вообще — не показываем (пустой скан)
+    return merged.filter(r => r.name || r.phone || r.email || r.address);
+  }
+
+  // ── Рендер таблицы и пагинации ────────────────────────────────────
+
+  function cell(value) {
+    return value ? escapeHtml(value) : '<span class="empty-cell">—</span>';
+  }
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+
+  function renderTable() {
+    resultsHeader.style.display = "flex";
+    tableWrap.style.display = "block";
+    resultsCount.innerHTML = `Найдено <strong>${dedupedResults.length}</strong> уникальных контактов`;
+
+    const totalPages = Math.max(1, Math.ceil(dedupedResults.length / PAGE_SIZE));
+    if (currentPage > totalPages) currentPage = totalPages;
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const pageItems = dedupedResults.slice(start, start + PAGE_SIZE);
+
+    tableBody.innerHTML = pageItems.map(r => `
+      <tr>
+        <td>${cell(r.name)}</td>
+        <td>${cell(r.phone)}</td>
+        <td>${cell(r.email)}</td>
+        <td>${cell(r.address)}</td>
+      </tr>
+    `).join("");
+
+    renderPagination(totalPages);
+  }
+
+  function renderPagination(totalPages) {
+    if (totalPages <= 1) { paginationEl.style.display = "none"; return; }
+    paginationEl.style.display = "flex";
+    let html = `<button ${currentPage === 1 ? "disabled" : ""} data-page="${currentPage - 1}">‹</button>`;
+    const windowSize = 2;
+    for (let p = 1; p <= totalPages; p++) {
+      if (p === 1 || p === totalPages || Math.abs(p - currentPage) <= windowSize) {
+        html += `<button class="${p === currentPage ? "active" : ""}" data-page="${p}">${p}</button>`;
+      } else if (Math.abs(p - currentPage) === windowSize + 1) {
+        html += `<span style="color:var(--dim);padding:0 4px;">…</span>`;
+      }
+    }
+    html += `<button ${currentPage === totalPages ? "disabled" : ""} data-page="${currentPage + 1}">›</button>`;
+    paginationEl.innerHTML = html;
+    paginationEl.querySelectorAll("button[data-page]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        currentPage = parseInt(btn.dataset.page, 10);
+        renderTable();
+        window.scrollTo({ top: tableWrap.offsetTop - 20, behavior: "smooth" });
+      });
+    });
+  }
+
+  // ── Обработка батчей ──────────────────────────────────────────────
+
+  async function processBatch(files, apiKey) {
+    const form = new FormData();
+    form.append("api_key", apiKey);
+    files.forEach(f => form.append("files", f, f.name));
+    const res = await fetch("/api/process", { method: "POST", body: form });
+    if (!res.ok) {
+      let detail = `HTTP ${res.status}`;
+      try { const err = await res.json(); if (err.detail) detail = err.detail; } catch {}
+      throw new Error(detail);
+    }
+    const data = await res.json();
+    return data.results;
+  }
+
+  async function startScan() {
+    clearError();
+    const apiKey = apiKeyEl.value.trim();
+    if (!apiKey) { showError("Нужен OpenRouter API Key"); return; }
+    if (collectedFiles.length === 0) { showError("Сначала выбери файлы"); return; }
+
+    startBtn.disabled = true;
+    progressWrap.style.display = "block";
+    rawResults = [];
+
+    const batches = [];
+    for (let i = 0; i < collectedFiles.length; i += BATCH_SIZE) {
+      batches.push(collectedFiles.slice(i, i + BATCH_SIZE));
+    }
+
+    let processedCount = 0;
+    const total = collectedFiles.length;
+
+    for (let b = 0; b < batches.length; b++) {
+      progressBatch.textContent = `Батч ${b + 1} из ${batches.length}`;
+      try {
+        const results = await processBatch(batches[b], apiKey);
+        rawResults = rawResults.concat(results);
+      } catch (e) {
+        showError(`Ошибка на батче ${b + 1}: ${e.message}`);
+      }
+      processedCount += batches[b].length;
+      progressText.textContent = `Обработано ${processedCount} из ${total}`;
+      progressFill.style.width = `${Math.round((processedCount / total) * 100)}%`;
+
+      // показываем промежуточный результат по мере готовности батчей
+      dedupedResults = dedupe(rawResults.map(r => ({ ...r })));
+      currentPage = 1;
+      renderTable();
+    }
+
+    progressBatch.textContent = "Готово";
+    startBtn.disabled = false;
+  }
+
+  startBtn.addEventListener("click", startScan);
+
+  // ── Экспорт ────────────────────────────────────────────────────────
+
+  function exportRows() {
+    return dedupedResults.map(r => ({
+      "Имя / организация": r.name,
+      "Телефон": r.phone,
+      "Email": r.email,
+      "Адрес": r.address,
+    }));
+  }
+
+  document.getElementById("downloadCsv").addEventListener("click", () => {
+    if (dedupedResults.length === 0) return;
+    const rows = exportRows();
+    const header = Object.keys(rows[0]);
+    const csvLines = [header.join(";")].concat(
+      rows.map(r => header.map(h => `"${(r[h] || "").replace(/"/g, '""')}"`).join(";"))
+    );
+    const blob = new Blob(["\uFEFF" + csvLines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "contacts.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  document.getElementById("downloadXlsx").addEventListener("click", () => {
+    if (dedupedResults.length === 0) return;
+    const rows = exportRows();
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Contacts");
+    XLSX.writeFile(wb, "contacts.xlsx");
+  });
+</script>
+</body>
+</html>

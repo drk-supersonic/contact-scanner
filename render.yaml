@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: interview-bot
+    name: contact-extractor
     runtime: python
     plan: free
     buildCommand: pip install -r requirements.txt
